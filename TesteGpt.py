@@ -2,10 +2,10 @@ import os
 
 import openai
 from flask import Flask, request
+from pyexpat.errors import messages
 from twilio.rest import Client
 from twilio.twiml.messaging_response import MessagingResponse
 import geocoder
-from Utils import obter_cidade_por_coordenadas
 
 app = Flask(__name__)
 
@@ -16,6 +16,10 @@ twilio_whatsapp_number = os.environ['TWILIO_WHATSAPP_NUMBER']
 
 client = Client(twilio_account_sid, twilio_auth_token)
 
+historico = []
+
+dadosIniciaisNaoForamAdicionados = True
+
 @app.route('/whatsapp', methods=['POST'])
 def whatsapp_reply():
     incoming_msg = request.form.get('Body')
@@ -25,12 +29,6 @@ def whatsapp_reply():
 
     response.message(resposta_ia)
 
-    # from main import mostrar_output
-    # response.message(mostrar_output())
-
-    #msg.message("Dados transformados em uma tabela no formato png: ")
-    # msg.media("https://github.com/miguel-sr/NASA-SpaceApps/blob/main/img.png")
-
     return str(response)
 
 @app.route('/')
@@ -38,18 +36,42 @@ def index():
     return "Ping Pong!"
 
 def consultar_ia(pergunta):
+    global dadosIniciaisNaoForamAdicionados
     g = geocoder.ip('me')
+
+    if dadosIniciaisNaoForamAdicionados:
+        historico.extend([
+            {"role": "system", "content": "Você um assistente de agricultura"},
+            {"role": "assistant", "content": f"Segue localização da requisição: {g.current_result.address}. Você não pode exceder o limite de 1400 caracteres na resposta!"}
+        ])
+        dadosIniciaisNaoForamAdicionados = False
+
+    historico.append({"role": "user", "content": pergunta})
 
     completion = openai.chat.completions.create(
         model="gpt-4o",
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": pergunta},
-            {"role": "assistant", "content": f"Segue localização da requisição: {g.current_result.address}. Resuma o máximo possível, não excendo o limite de 1500 caracteres."}
-        ]
+        messages=historico,
     )
 
-    return completion.choices[0].message.content
+    retorno = completion.choices[0].message.content
+
+    # if len(retorno) > 1599:
+    #     completion = openai.chat.completions.create(
+    #         model="gpt-3.5-turbo",
+    #         messages=[
+    #             {"role": "system", "content": "Você um assistente de agricultura"},
+    #             {"role": "user", "content": f"Resuma o texto para que tenha no máximo 1500 caracteres: {retorno}"}
+    #         ],
+    #     )
+    #
+    #     retorno = completion.choices[0].message.content
+
+    if len(retorno) > 1599:
+        retorno = retorno[0, 1559]
+
+    historico.append({"role": "system", "content": retorno})
+
+    return retorno
 
 if __name__ == '__main__':
     app.run(port=3000)
