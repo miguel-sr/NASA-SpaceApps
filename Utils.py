@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+from geopy import Nominatim
 
 casos_reais_queimadas = [ "1 - Queimada no Paraguai, Puerto Casado dia 03/10/2024."
                          ,"2 - Queimada na Rússia, Mazhanovsky District dia 02/10/2024."
@@ -49,3 +50,14 @@ def CriarTabelaAPartirDeArray(array):
     # Salvando a imagem da tabela
     plt.savefig('tabela.png', bbox_inches='tight')  # Salva a imagem no formato PNG
     plt.show()  # Exibe a tabela
+
+def obter_cidade_por_coordenadas(coordenadas):
+    try:
+        geolocator = Nominatim(user_agent="geoapiExercises")
+        location = geolocator.reverse(f"{coordenadas[0]}, {coordenadas[1]}")
+        if location:
+            return location.address.split(',')[0]  # Retorna o nome da cidade
+
+        return "Local desconhecido"
+    except:
+        return "Local desconhecido"
