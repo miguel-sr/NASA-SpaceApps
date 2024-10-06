@@ -28,10 +28,13 @@ def obter_cidade_por_coordenadas(coordenadas):
     except:
         return "Local desconhecido"
 
-def mostrar_output(response_json, dias):
+## response_json, dias
+def mostrar_output():
+    texto = "Aqui segue a lista de desastres naturais acontecidos pelo mundo nos ultimos 3 dias:\n"
     for caso in casos_reais_queimadas:
-        print(caso)
-    CriarTabelaAPartirDeArray(casos_reais_queimadas)
+        texto+=caso+"\n"
+    return texto
+    ##CriarTabelaAPartirDeArray(casos_reais_queimadas)
     # thisdict = {
     #     "Wildfires": "Queimada",
     #     "Severe Storms": "Tempestades severas"
