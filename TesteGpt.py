@@ -1,19 +1,17 @@
-import openai
-from openai import models
+import os
+import google.generativeai as genai
 
-def consultar_chatgpt(pergunta):
-    completion = openai.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": pergunta},
-        ],
-        temperature=1,
-        max_tokens=200
-    )
-    return completion.choices[0].message['content']
+key = os.environ['GEMINI_API_KEY']
+
+genai.configure(api_key=key)
+
+def consultar_ia(pergunta):
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    response = model.generate_content(pergunta)
+
+    return response.text
 
 if __name__ == "__main__":
-    pergunta = input("Digite sua mensagem para o ChatGPT: ")
-    resposta = consultar_chatgpt(pergunta)
-    print(f"ChatGPT: {resposta}")
+    pergunta = input("Digite sua mensagem para o Gemini: ")
+    resposta = consultar_ia(pergunta)
+    print(f"Gemini: {resposta}")
